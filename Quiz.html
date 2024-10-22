@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+
+        #inputForm {
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #errorPopup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: red;
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        #quizzes {
+            margin-top: 20px;
+        }
+
+        .quiz {
+            background-color: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="inputForm">
+        <h2>الرجاء إدخال رقم الهوية</h2>
+        <input type="text" id="userIdInput" placeholder="ادخل رقم الهوية">
+        <button onclick="submitForm()">ارسال</button>
+    </div>
+
+    <div id="errorPopup">الرقم غير صالح</div>
+    <div id="quizzes"></div>
+
+    <script>
+        // Function to display a custom error pop-up
+        function showErrorPopup(message) {
+            const popup = document.getElementById('errorPopup');
+            popup.textContent = message;
+            popup.style.display = 'block';
+
+            setTimeout(() => {
+                popup.style.display = 'none';
+            }, 3000);
+        }
+
+        // Function to handle the form submission
+        function submitForm() {
+            const userId = document.getElementById('userIdInput').value;
+
+            if (!userId) {
+                showErrorPopup('الرقم غير صالح');
+                return;
+            }
+
+            // API Request to /login endpoint
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: userId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.token) {
+                    showErrorPopup('الرقم غير صالح');
+                } else {
+                    displayQuizzes(data.quizzes);
+                }
+            })
+            .catch(error => {
+                showErrorPopup('حدث خطأ ما. حاول مرة أخرى.');
+            });
+        }
+
+        // Function to display quizzes after the request
+        function displayQuizzes(quizzes) {
+            const quizzesDiv = document.getElementById('quizzes');
+            quizzesDiv.innerHTML = ''; // Clear any previous quizzes
+
+            if (quizzes && quizzes.length > 0) {
+                quizzes.forEach(quiz => {
+                    const quizDiv = document.createElement('div');
+                    quizDiv.classList.add('quiz');
+                    quizDiv.textContent = `Quiz ID: ${quiz.id}, Name: ${quiz.name}`;
+                    quizzesDiv.appendChild(quizDiv);
+                });
+            } else {
+                quizzesDiv.innerHTML = '<p>لم يتم العثور على اختبارات.</p>';
+            }
+        }
+    </script>
+
+</body>
+</html>
