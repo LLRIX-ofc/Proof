@@ -94,6 +94,16 @@
       background-color: red;
       color: white;
     }
+
+    .final-screen {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      background-color: white;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -112,6 +122,11 @@
   <div class="prompt" id="invalidTokenPrompt">
     <h2>الرقم غير صالح</h2>
     <button class="no-btn" onclick="closeInvalidTokenPrompt()">إغلاق</button>
+  </div>
+
+  <div class="final-screen" id="finalScreen">
+    <h2>مرحبًا بك!</h2>
+    <button onclick="solveQuiz()">حل اختبار الأسلاميات</button>
   </div>
 
   <script>
@@ -164,8 +179,12 @@
     }
 
     function confirmYes() {
-      alert('تم التأكيد!');
-      // Add further logic here as needed
+      const confirmationPrompt = document.getElementById('confirmationPrompt');
+      confirmationPrompt.style.display = 'none';
+
+      // Show the final screen after confirmation
+      const finalScreen = document.getElementById('finalScreen');
+      finalScreen.style.display = 'flex';
     }
 
     function confirmNo() {
@@ -182,6 +201,11 @@
     function closeInvalidTokenPrompt() {
       const invalidTokenPrompt = document.getElementById('invalidTokenPrompt');
       invalidTokenPrompt.style.display = 'none';
+    }
+
+    function solveQuiz() {
+      alert('ستتم إعادة توجيهك إلى اختبار الأسلاميات!');
+      // Here you can add logic to redirect to the quiz or open a new page
     }
   </script>
 </body>
