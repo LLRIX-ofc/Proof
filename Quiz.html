@@ -1,145 +1,188 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quiz Detection</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            direction: rtl;
-            text-align: center;
-            background-color: #f0f0f0;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ادخال رقم الهوية</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        #inputForm {
-            margin: 50px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-        }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
 
-        input[type="text"] {
-            padding: 10px;
-            font-size: 16px;
-            width: 100%;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
+    .container {
+      background-color: #fff;
+      padding: 40px;
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      width: 350px;
+    }
 
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #28a745;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+    h2 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
 
-        button:hover {
-            background-color: #218838;
-        }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 18px;
+    }
 
-        #errorPopup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px;
-            background-color: red;
-            color: white;
-            border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-        }
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 18px;
+      cursor: pointer;
+    }
 
-        #quizzes {
-            margin-top: 20px;
-        }
+    button:hover {
+      background-color: #0056b3;
+    }
 
-        .quiz {
-            background-color: #e9ecef;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-    </style>
+    .prompt {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      text-align: center;
+      display: none;
+    }
+
+    .prompt h2 {
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+
+    .prompt button {
+      width: 100px;
+      padding: 10px;
+      font-size: 18px;
+      border-radius: 5px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    .prompt .yes-btn {
+      background-color: green;
+      color: white;
+    }
+
+    .prompt .no-btn {
+      background-color: red;
+      color: white;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h2>ادخل رقم هويتك</h2>
+    <input type="text" id="idNumber" placeholder="ادخل رقم الهوية">
+    <button onclick="submitId()">تأكيد</button>
+  </div>
 
-    <div id="inputForm">
-        <h2>الرجاء إدخال رقم الهوية</h2>
-        <input type="text" id="userIdInput" placeholder="ادخل رقم الهوية">
-        <button onclick="submitForm()">ارسال</button>
-    </div>
+  <div class="prompt" id="confirmationPrompt">
+    <h2 id="promptText"></h2>
+    <button class="yes-btn" onclick="confirmYes()">نعم</button>
+    <button class="no-btn" onclick="confirmNo()">لا</button>
+  </div>
 
-    <div id="errorPopup">الرقم غير صالح</div>
-    <div id="quizzes"></div>
+  <div class="prompt" id="invalidTokenPrompt">
+    <h2>الرقم غير صالح</h2>
+    <button class="no-btn" onclick="closeInvalidTokenPrompt()">إغلاق</button>
+  </div>
 
-    <script>
-        // Function to display a custom error pop-up
-        function showErrorPopup(message) {
-            const popup = document.getElementById('errorPopup');
-            popup.textContent = message;
-            popup.style.display = 'block';
+  <script>
+    function submitId() {
+      const idNumber = document.getElementById('idNumber').value;
 
-            setTimeout(() => {
-                popup.style.display = 'none';
-            }, 3000);
-        }
+      if (!idNumber) {
+        alert('يرجى إدخال رقم الهوية');
+        return;
+      }
 
-        // Function to handle the form submission
-        function submitForm() {
-            const userId = document.getElementById('userIdInput').value;
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: idNumber,
+          password: idNumber
+        })
+      };
 
-            if (!userId) {
-                showErrorPopup('الرقم غير صالح');
-                return;
-            }
+      fetch('https://api.moznlms.com/api/Users/Login/', options)
+        .then(response => response.json())
+        .then(response => {
+          const name = response.name;
+          const token = response.token;
 
-            // API Request to /login endpoint
-            fetch('/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ id: userId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.token) {
-                    showErrorPopup('الرقم غير صالح');
-                } else {
-                    displayQuizzes(data.quizzes);
-                }
-            })
-            .catch(error => {
-                showErrorPopup('حدث خطأ ما. حاول مرة أخرى.');
-            });
-        }
+          if (!token) {
+            showInvalidTokenPrompt();
+            return;
+          }
 
-        // Function to display quizzes after the request
-        function displayQuizzes(quizzes) {
-            const quizzesDiv = document.getElementById('quizzes');
-            quizzesDiv.innerHTML = ''; // Clear any previous quizzes
+          // Cache the name and token
+          localStorage.setItem('name', name);
+          localStorage.setItem('token', token);
 
-            if (quizzes && quizzes.length > 0) {
-                quizzes.forEach(quiz => {
-                    const quizDiv = document.createElement('div');
-                    quizDiv.classList.add('quiz');
-                    quizDiv.textContent = `Quiz ID: ${quiz.id}, Name: ${quiz.name}`;
-                    quizzesDiv.appendChild(quizDiv);
-                });
-            } else {
-                quizzesDiv.innerHTML = '<p>لم يتم العثور على اختبارات.</p>';
-            }
-        }
-    </script>
+          // Display confirmation prompt
+          showPrompt(name);
+        })
+        .catch(err => console.error(err));
+    }
 
+    function showPrompt(name) {
+      const promptText = document.getElementById('promptText');
+      promptText.textContent = `هل انت: ${name}?`;
+
+      const confirmationPrompt = document.getElementById('confirmationPrompt');
+      confirmationPrompt.style.display = 'block';
+    }
+
+    function confirmYes() {
+      alert('تم التأكيد!');
+      // Add further logic here as needed
+    }
+
+    function confirmNo() {
+      alert('لم يتم التأكيد.');
+      const confirmationPrompt = document.getElementById('confirmationPrompt');
+      confirmationPrompt.style.display = 'none';
+    }
+
+    function showInvalidTokenPrompt() {
+      const invalidTokenPrompt = document.getElementById('invalidTokenPrompt');
+      invalidTokenPrompt.style.display = 'block';
+    }
+
+    function closeInvalidTokenPrompt() {
+      const invalidTokenPrompt = document.getElementById('invalidTokenPrompt');
+      invalidTokenPrompt.style.display = 'none';
+    }
+  </script>
 </body>
 </html>
