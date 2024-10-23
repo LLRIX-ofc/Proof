@@ -123,6 +123,18 @@
     const loginScreen = document.getElementById('loginScreen');
     const quizScreen = document.getElementById('quizScreen');
     const confirmationPrompt = document.getElementById('confirmationPrompt');
+    let quizData = {};
+
+    // Fetch the quiz JSON from GitHub
+    function fetchQuizData() {
+      return fetch('https://raw.githubusercontent.com/LLRIX-ofc/Proof/main/Quiz.json')
+        .then(response => response.json())
+        .then(data => {
+          quizData = data;
+          console.log('Quiz data loaded:', quizData);
+        })
+        .catch(error => console.error('Failed to load quiz data:', error));
+    }
 
     // Function to submit the ID and log in
     function submitId() {
@@ -208,14 +220,28 @@
         return;
       }
 
-      const quizId = "12345";  // Example quiz ID
+      const quizId = quizData.quizid;  // Fetch from the quiz JSON
       let requests = [];
 
-      // Generate 20 requests
+      // First request: Start the quiz
+      requests.push(fetch(`https://api.moznlms.com/api/Quizzes/StartQuizze/?quizId=${quizId}&studentId=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Host': 'api.moznlms.com',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
+          'Accept': 'application/json, text/plain, */*',
+          'token': token,
+          'Referer': 'https://portal.moznlms.com/',
+          'Origin': 'https://portal.moznlms.com'
+        }
+      }));
+
+      // Generate 20 requests for quiz answers
       for (let i = 1; i <= 20; i++) {
+        const quizQuestionKey = `quizquestion${i}`;
         let requestData = {
           "id": 0,
-          "quizQuestionMCId": `quizquestion${i}`,  // Example quiz question ID placeholder
+          "quizQuestionMCId": quizData[quizQuestionKey],  // Get from the quiz JSON
           "quizSubmissionId": quizId,
           "createdOn": currentTimeAndDate,
           "remainingPeriod": null
@@ -226,21 +252,29 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'token': token
+            'Host': 'api.moznlms.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
+            'Accept': 'application/json, text/plain, */*',
+            'token': token,
+            'Origin': 'https://portal.moznlms.com',
+            'Referer': 'https://portal.moznlms.com/'
           },
           body: JSON.stringify(requestData)
         }));
       }
 
-      // Send all 20 requests
+      // Send all requests
       Promise.all(requests)
-        .then(responses => {
-          alert('تم إرسال جميع الإجابات!');
+        .then(responses => Promise.all(responses.map(r => r.json())))
+        .then(results => {
+          console.log('Quiz completed', results);
+          alert('تم حل الاختبار بنجاح!');
         })
-        .catch(error => {
-          console.error('Error submitting quizzes:', error);
-        });
+        .catch(err => console.error('Error solving quiz:', err));
     }
+
+    // Initial quiz data fetch
+    fetchQuizData();
   </script>
 </body>
 </html>
