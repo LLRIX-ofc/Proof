@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>حل اختبار الأسلاميات</title>
+  <title>ادخال رقم الهوية</title>
   <style>
     * {
       margin: 0;
@@ -21,17 +21,31 @@
       text-align: center;
     }
 
-    .container {
+    .container, .quiz-container, .prompt {
       background-color: #fff;
       padding: 40px;
       box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
       border-radius: 10px;
       width: 350px;
+      display: none; /* Initially hidden */
+    }
+
+    .container.active, .quiz-container.active, .prompt.active {
+      display: block;
     }
 
     h2 {
       font-size: 24px;
       margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 18px;
     }
 
     button {
@@ -54,10 +68,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background-color: white;
-      border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      padding: 20px;
       text-align: center;
     }
 
@@ -84,39 +95,106 @@
       background-color: red;
       color: white;
     }
-
-    .hidden {
-      display: none;
-    }
   </style>
 </head>
 <body>
-  <div class="container" id="quizPage">
+  <!-- Login Container -->
+  <div class="container active" id="loginScreen">
+    <h2>ادخل رقم هويتك</h2>
+    <input type="text" id="idNumber" placeholder="أدخل رقم الهوية">
+    <button onclick="submitId()">تأكيد</button>
+  </div>
+
+  <!-- Confirmation Prompt -->
+  <div class="prompt" id="confirmationPrompt">
+    <h2 id="promptText"></h2>
+    <button class="yes-btn" onclick="confirmYes()">نعم</button>
+    <button class="no-btn" onclick="confirmNo()">لا</button>
+  </div>
+
+  <!-- Quiz Screen -->
+  <div class="quiz-container" id="quizScreen">
     <h2>هل تريد حل اختبار الأسلاميات؟</h2>
     <button onclick="confirmSolve()">حل اختبار الأسلاميات</button>
   </div>
 
-  <div class="prompt hidden" id="confirmationPrompt">
-    <h2>هل تريد إرسال الإجابات؟</h2>
-    <button class="yes-btn" onclick="solveQuiz()">نعم</button>
-    <button class="no-btn" onclick="cancelSolve()">لا</button>
-  </div>
-
   <script>
-    // This function confirms the user's intent to solve the quiz
-    function confirmSolve() {
-      const confirmationPrompt = document.getElementById('confirmationPrompt');
-      const quizPage = document.getElementById('quizPage');
-      quizPage.classList.add('hidden');
-      confirmationPrompt.classList.remove('hidden');
+    // Show the login input first
+    const loginScreen = document.getElementById('loginScreen');
+    const quizScreen = document.getElementById('quizScreen');
+    const confirmationPrompt = document.getElementById('confirmationPrompt');
+
+    // Function to submit the ID and log in
+    function submitId() {
+      const idNumber = document.getElementById('idNumber').value;
+
+      if (!idNumber) {
+        alert('يرجى إدخال رقم الهوية');
+        return;
+      }
+
+      const options = {
+        method: 'POST',
+        headers: {
+          'Host': 'api.moznlms.com',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
+          'Accept': 'application/json, text/plain, */*',
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json',
+          'Origin': 'https://portal.moznlms.com',
+          'Referer': 'https://portal.moznlms.com/',
+          'Sec-Fetch-Mode': 'cors'
+        },
+        body: JSON.stringify({
+          username: idNumber,
+          password: idNumber
+        })
+      };
+
+      fetch('https://api.moznlms.com/api/Users/Login/', options)
+        .then(response => response.json())
+        .then(response => {
+          const name = response.name;
+          const token = response.token;
+          const userId = response.userId;
+
+          // Cache the name, token, and userId
+          localStorage.setItem('name', name);
+          localStorage.setItem('token', token);
+          localStorage.setItem('userId', userId);
+
+          // Show confirmation prompt
+          showPrompt(name);
+        })
+        .catch(err => console.error(err));
     }
 
-    // This function hides the confirmation and does nothing
-    function cancelSolve() {
-      const confirmationPrompt = document.getElementById('confirmationPrompt');
-      const quizPage = document.getElementById('quizPage');
-      confirmationPrompt.classList.add('hidden');
-      quizPage.classList.remove('hidden');
+    // Display the confirmation prompt
+    function showPrompt(name) {
+      const promptText = document.getElementById('promptText');
+      promptText.textContent = `هل انت: ${name}?`;
+
+      loginScreen.classList.remove('active');
+      confirmationPrompt.classList.add('active');
+    }
+
+    // Confirm the user
+    function confirmYes() {
+      confirmationPrompt.classList.remove('active');
+      quizScreen.classList.add('active'); // Show the final screen
+    }
+
+    // Cancel confirmation
+    function confirmNo() {
+      confirmationPrompt.classList.remove('active');
+      loginScreen.classList.add('active'); // Go back to login
+    }
+
+    // Confirmation before solving the quiz
+    function confirmSolve() {
+      if (confirm('هل تريد إرسال الإجابات؟')) {
+        solveQuiz();
+      }
     }
 
     // Function to solve the quiz by sending 20 API requests
@@ -130,7 +208,6 @@
         return;
       }
 
-      // Prepare quiz data with placeholders
       const quizId = "12345";  // Example quiz ID
       let requests = [];
 
@@ -155,16 +232,14 @@
         }));
       }
 
-      // Send all 20 requests sequentially or in parallel
+      // Send all 20 requests
       Promise.all(requests)
         .then(responses => {
-          console.log('All quiz submissions sent successfully:', responses);
+          alert('تم إرسال جميع الإجابات!');
         })
         .catch(error => {
           console.error('Error submitting quizzes:', error);
         });
-
-      alert('تم إرسال جميع الإجابات!');
     }
   </script>
 </body>
