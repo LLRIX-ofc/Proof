@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ادخال رقم الهوية</title>
+  <title>حل اختبار الأسلاميات</title>
   <style>
     * {
       margin: 0;
@@ -34,15 +34,6 @@
       margin-bottom: 20px;
     }
 
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 18px;
-    }
-
     button {
       width: 100%;
       padding: 10px;
@@ -68,7 +59,6 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
       padding: 20px;
       text-align: center;
-      display: none;
     }
 
     .prompt h2 {
@@ -95,119 +85,86 @@
       color: white;
     }
 
-    .final-screen {
+    .hidden {
       display: none;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      height: 100vh;
-      background-color: white;
-      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>ادخل رقم هويتك</h2>
-    <input type="text" id="idNumber" placeholder="ادخل رقم الهوية">
-    <button onclick="submitId()">تأكيد</button>
+  <div class="container" id="quizPage">
+    <h2>هل تريد حل اختبار الأسلاميات؟</h2>
+    <button onclick="confirmSolve()">حل اختبار الأسلاميات</button>
   </div>
 
-  <div class="prompt" id="confirmationPrompt">
-    <h2 id="promptText"></h2>
-    <button class="yes-btn" onclick="confirmYes()">نعم</button>
-    <button class="no-btn" onclick="confirmNo()">لا</button>
-  </div>
-
-  <div class="prompt" id="invalidTokenPrompt">
-    <h2>الرقم غير صالح</h2>
-    <button class="no-btn" onclick="closeInvalidTokenPrompt()">إغلاق</button>
-  </div>
-
-  <div class="final-screen" id="finalScreen">
-    <h2>مرحبًا بك!</h2>
-    <button onclick="solveQuiz()">حل اختبار الأسلاميات</button>
+  <div class="prompt hidden" id="confirmationPrompt">
+    <h2>هل تريد إرسال الإجابات؟</h2>
+    <button class="yes-btn" onclick="solveQuiz()">نعم</button>
+    <button class="no-btn" onclick="cancelSolve()">لا</button>
   </div>
 
   <script>
-    function submitId() {
-      const idNumber = document.getElementById('idNumber').value;
+    // This function confirms the user's intent to solve the quiz
+    function confirmSolve() {
+      const confirmationPrompt = document.getElementById('confirmationPrompt');
+      const quizPage = document.getElementById('quizPage');
+      quizPage.classList.add('hidden');
+      confirmationPrompt.classList.remove('hidden');
+    }
 
-      if (!idNumber) {
-        alert('يرجى إدخال رقم الهوية');
+    // This function hides the confirmation and does nothing
+    function cancelSolve() {
+      const confirmationPrompt = document.getElementById('confirmationPrompt');
+      const quizPage = document.getElementById('quizPage');
+      confirmationPrompt.classList.add('hidden');
+      quizPage.classList.remove('hidden');
+    }
+
+    // Function to solve the quiz by sending 20 API requests
+    function solveQuiz() {
+      const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userId');
+      const currentTimeAndDate = new Date().toISOString();
+
+      if (!token || !userId) {
+        alert('لم يتم العثور على بيانات المستخدم.');
         return;
       }
 
-      const options = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          username: idNumber,
-          password: idNumber
+      // Prepare quiz data with placeholders
+      const quizId = "12345";  // Example quiz ID
+      let requests = [];
+
+      // Generate 20 requests
+      for (let i = 1; i <= 20; i++) {
+        let requestData = {
+          "id": 0,
+          "quizQuestionMCId": `quizquestion${i}`,  // Example quiz question ID placeholder
+          "quizSubmissionId": quizId,
+          "createdOn": currentTimeAndDate,
+          "remainingPeriod": null
+        };
+
+        // Create a fetch request for each quiz question
+        requests.push(fetch(`https://api.moznlms.com/api/aplyQuizAnswerMCs/PostaplyQuizAnswerMC/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'token': token
+          },
+          body: JSON.stringify(requestData)
+        }));
+      }
+
+      // Send all 20 requests sequentially or in parallel
+      Promise.all(requests)
+        .then(responses => {
+          console.log('All quiz submissions sent successfully:', responses);
         })
-      };
+        .catch(error => {
+          console.error('Error submitting quizzes:', error);
+        });
 
-      fetch('https://api.moznlms.com/api/Users/Login/', options)
-        .then(response => response.json())
-        .then(response => {
-          const name = response.name;
-          const token = response.token;
-
-          if (!token) {
-            showInvalidTokenPrompt();
-            return;
-          }
-
-          // Cache the name and token
-          localStorage.setItem('name', name);
-          localStorage.setItem('token', token);
-
-          // Display confirmation prompt
-          showPrompt(name);
-        })
-        .catch(err => console.error(err));
-    }
-
-    function showPrompt(name) {
-      const promptText = document.getElementById('promptText');
-      promptText.textContent = `هل انت: ${name}?`;
-
-      const confirmationPrompt = document.getElementById('confirmationPrompt');
-      confirmationPrompt.style.display = 'block';
-    }
-
-    function confirmYes() {
-      const confirmationPrompt = document.getElementById('confirmationPrompt');
-      confirmationPrompt.style.display = 'none';
-
-      // Show the final screen after confirmation
-      const finalScreen = document.getElementById('finalScreen');
-      finalScreen.style.display = 'flex';
-    }
-
-    function confirmNo() {
-      alert('لم يتم التأكيد.');
-      const confirmationPrompt = document.getElementById('confirmationPrompt');
-      confirmationPrompt.style.display = 'none';
-    }
-
-    function showInvalidTokenPrompt() {
-      const invalidTokenPrompt = document.getElementById('invalidTokenPrompt');
-      invalidTokenPrompt.style.display = 'block';
-    }
-
-    function closeInvalidTokenPrompt() {
-      const invalidTokenPrompt = document.getElementById('invalidTokenPrompt');
-      invalidTokenPrompt.style.display = 'none';
-    }
-
-    function solveQuiz() {
-      // Redirect to the quiz or perform the desired action
-      alert('ستتم إعادة توجيهك إلى اختبار الأسلاميات!');
-      // For example, you can redirect to another URL:
-      // window.location.href = 'URL_TO_YOUR_QUIZ';
+      alert('تم إرسال جميع الإجابات!');
     }
   </script>
 </body>
